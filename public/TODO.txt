@@ -1,0 +1,10 @@
+to dos :
+
+change ui and make it modernized --done
+changed supabase to sqlite -- done 
+remove clerk and use plain auth --done 
+use jwt tokens and oauth learn also 
+fix gemini api key issue 
+readme
+add a home button on dashboard
+fix all non working features 

@@ -1,8 +1,8 @@
 import { Inngest } from "inngest";
 
 export const inngest = new Inngest({
-  id: "finTrack", 
-  name: "FinTrack",
+  id: "unifinance",
+  name: "UniFinance",
   retryFunction: async (attempt: number) => ({
     delay: Math.pow(2, attempt) * 1000, // Exponential backoff
     maxAttempts: 2,

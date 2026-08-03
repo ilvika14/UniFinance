@@ -8,7 +8,7 @@ export async function sendEmail({ to, subject, react }:{to:string; subject:strin
 
   try {
     const data = await resend.emails.send({
-      from: "Fintrack <onboarding@resend.dev>",
+      from: "UniFinance <onboarding@resend.dev>",
       to,
       subject,
       react,

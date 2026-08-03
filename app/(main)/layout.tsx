@@ -7,17 +7,15 @@ export default function Layout({
 }) {
   return (
     <>
-      <main className="min-h-screen bg-[#faf9f6]">
+      <main className="min-h-screen bg-background">
         <div className="pt-16">
           {children}
         </div>
-
         <Toaster
           richColors
-          theme="light"
+          theme="dark"
           toastOptions={{
-            className:
-              "bg-white border border-[#e4e1db] text-[#1a1a16] shadow-lg rounded-none",
+            className: "bg-card border border-border text-foreground rounded-xl",
           }}
         />
       </main>

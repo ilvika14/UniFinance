@@ -1,29 +1,15 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { getSession } from "@/lib/auth";
 import { db as prismaDb } from "@/lib/prisma";
 
 export async function getOrCreateUser() {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Unauthorized");
+  const session = await getSession();
+  if (!session) throw new Error("Unauthorized");
 
-  let user = await prismaDb.user.findUnique({
-    where: { clerkUserId: userId },
+  const user = await prismaDb.user.findUnique({
+    where: { id: session.userId },
   });
 
-  if (user) return user;
-
-  const clerkUser = await currentUser();
-  if (!clerkUser) throw new Error("Unauthorized");
-
-  const fullName = `${clerkUser.firstName ?? ""} ${clerkUser.lastName ?? ""}`.trim();
-
-  user = await prismaDb.user.create({
-    data: {
-      clerkUserId: clerkUser.id,
-      name: fullName || clerkUser.username || "Unnamed User",
-      imageUrl: clerkUser.imageUrl ?? "",
-      email: clerkUser.emailAddresses[0]?.emailAddress ?? "",
-    },
-  });
+  if (!user) throw new Error("Unauthorized");
 
   return user;
 }

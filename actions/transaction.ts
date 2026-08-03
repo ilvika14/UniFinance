@@ -33,12 +33,10 @@ export async function createTransaction(data: FormDataTransaction) {
   try {
     const user = await getOrCreateUser();
 
-    const { userId } = await import("@clerk/nextjs/server").then(m => m.auth());
-
     const req = await request()
 
     const decision = await aj.protect(req, {
-      userId: userId!,
+      userId: user.id,
       requested: 1
     });
 
@@ -236,7 +234,7 @@ export async function updateTransaction(id: string, data: FormDataTransaction) {
     const newBalanceChange =
       data.type === "EXPENSE" ? -parseFloat(data.amount) : parseFloat(data.amount);
 
-    const netBalanceChange = newBalanceChange - oldBalanceChange;
+    const accountChanged = data.accountId !== originalTransaction.accountId;
 
     const transaction = await prismaDb.$transaction(async (tx: Prisma.TransactionClient) => {
       const updated = await tx.transaction.update({
@@ -260,20 +258,34 @@ export async function updateTransaction(id: string, data: FormDataTransaction) {
         },
       });
 
-      await tx.account.update({
-        where: { id: data.accountId },
-        data: {
-          balance: {
-            increment: netBalanceChange,
-          },
-        },
-      });
+      if (accountChanged) {
+        // Reversing old transaction on old account
+        await tx.account.update({
+          where: { id: originalTransaction.accountId },
+          data: { balance: { increment: -oldBalanceChange } },
+        });
+        // Apply new transaction on new account
+        await tx.account.update({
+          where: { id: data.accountId },
+          data: { balance: { increment: newBalanceChange } },
+        });
+      } else {
+        // Same account — apply only the net difference
+        const netBalanceChange = newBalanceChange - oldBalanceChange;
+        await tx.account.update({
+          where: { id: data.accountId },
+          data: { balance: { increment: netBalanceChange } },
+        });
+      }
 
       return updated;
     });
 
     revalidatePath("/dashboard");
-    revalidatePath(`/account/${data.accountId}`);
+    revalidatePath(`/account/${originalTransaction.accountId}`);
+    if (accountChanged) {
+      revalidatePath(`/account/${data.accountId}`);
+    }
 
     return { success: true, data: serializeAmount(transaction) };
   } catch (error: unknown) {

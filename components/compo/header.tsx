@@ -1,94 +1,143 @@
-import React from "react";
-import {
-  SignInButton,
-  Show,
-  UserButton,
-} from "@clerk/nextjs";
-import { LuLayoutDashboard, LuPen } from "react-icons/lu";
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { LuLayoutDashboard, LuPen, LuLogOut, LuUser } from "react-icons/lu";
+import { HiOutlineHome, HiOutlineSun, HiOutlineMoon } from "react-icons/hi2";
 import { Button } from "../ui/button";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Header() {
-  return (
-    <header className="fixed top-0 w-full z-50 border-b border-[#1a1a16]/10 bg-[#faf9f6]/90 backdrop-blur-sm">
-      <nav className="container mx-auto px-6 py-4 flex items-center justify-between">
+  const [user, setUser] = useState<{ userId: string; email: string; name: string | null } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const router = useRouter();
+  const { theme, setTheme } = useTheme();
 
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setUser(data?.user || null))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSignOut = async () => {
+    await fetch("/api/auth/signout", { method: "POST" });
+    setUser(null);
+    router.push("/");
+    router.refresh();
+  };
+
+  return (
+    <header
+      className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+        scrolled
+          ? "glass-strong border-b border-border/50 shadow-lg shadow-black/5 dark:shadow-black/20"
+          : "bg-transparent border-b border-transparent"
+      }`}
+    >
+      <nav className="container mx-auto px-6 py-3 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <span
-            className="text-2xl font-black tracking-tight text-[#1a1a16]"
-            style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
-          >
-            Fin<em className="not-italic text-[#5a7a52]">track</em>
-          </span>
+        <Link href="/" className="flex items-center gap-2.5 group">
+          <img
+            src="/logo_unif.png"
+            alt="UniFinance"
+            className="h-12 w-auto group-hover:scale-105 transition-transform duration-300"
+            style={{ filter: "hue-rotate(70deg) saturate(1.2)" }}
+          />
         </Link>
 
-        {/* Navigation Links (Signed Out Only) */}
-        <div className="hidden md:flex items-center space-x-8">
-          <Show when="signed-out">
-            <a
-              href="#features"
-              className="text-[#6b6860] hover:text-[#1a1a16] text-sm font-medium tracking-wide transition-colors"
-            >
-              Features
-            </a>
-            <a
-              href="#testimonials"
-              className="text-[#6b6860] hover:text-[#1a1a16] text-sm font-medium tracking-wide transition-colors"
-            >
-              Testimonials
-            </a>
-          </Show>
+        {/* Nav links */}
+        <div className="hidden md:flex items-center space-x-1">
+          {!user && !loading && (
+            <>
+              <a href="#features" className="relative text-muted-foreground hover:text-foreground text-sm font-medium px-3 py-2 rounded-xl hover:bg-muted/50 transition-all group">
+                Features
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-0 h-0.5 gradient rounded-full transition-all duration-300 group-hover:w-6" />
+              </a>
+              <a href="#testimonials" className="relative text-muted-foreground hover:text-foreground text-sm font-medium px-3 py-2 rounded-xl hover:bg-muted/50 transition-all group">
+                Testimonials
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-0 h-0.5 gradient rounded-full transition-all duration-300 group-hover:w-6" />
+              </a>
+            </>
+          )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center space-x-3">
+        {/* Right side */}
+        <div className="flex items-center gap-2">
+          {/* Theme toggle */}
+          {mounted && (
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+              title="Toggle theme"
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={theme}
+                  initial={{ y: -8, opacity: 0, rotate: -90 }}
+                  animate={{ y: 0, opacity: 1, rotate: 0 }}
+                  exit={{ y: 8, opacity: 0, rotate: 90 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {theme === "dark" ? <HiOutlineSun size={18} /> : <HiOutlineMoon size={18} />}
+                </motion.div>
+              </AnimatePresence>
+            </motion.button>
+          )}
 
-          {/* Signed In Buttons */}
-          <Show when="signed-in">
-            <Link href="/dashboard">
-              <Button
-                variant="outline"
-                className="border border-[#1a1a16]/20 bg-transparent hover:bg-[#1a1a16]/5 text-[#1a1a16] rounded-none text-sm font-semibold tracking-wide transition-all flex items-center gap-2"
-              >
-                <LuLayoutDashboard size={16} />
-                <span className="hidden md:inline">Dashboard</span>
-              </Button>
-            </Link>
+          {/* Auth buttons */}
+          {user && (
+            <>
+              <Link href="/">
+                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground rounded-xl">
+                  <HiOutlineHome size={16} />
+                  <span className="hidden md:inline">Home</span>
+                </Button>
+              </Link>
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground rounded-xl">
+                  <LuLayoutDashboard size={16} />
+                  <span className="hidden md:inline">Dashboard</span>
+                </Button>
+              </Link>
+              <Link href="/transactions/create">
+                <Button size="sm" className="gap-2 gradient text-white rounded-xl glow-emerald">
+                  <LuPen size={16} />
+                  <span className="hidden md:inline">Add</span>
+                </Button>
+              </Link>
+              <div className="flex items-center gap-1 ml-1 pl-2 border-l border-border">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                  <LuUser size={14} />
+                </div>
+                <button onClick={handleSignOut} className="p-2 text-muted-foreground hover:text-destructive rounded-xl hover:bg-destructive/10 transition-all" title="Sign out">
+                  <LuLogOut size={14} />
+                </button>
+              </div>
+            </>
+          )}
 
-            <Link href="/transactions/create">
-              <Button
-                className="flex items-center gap-2 bg-[#1a1a16] hover:bg-[#2e2e28] text-[#faf9f6] rounded-none border-0 text-sm font-semibold tracking-wide transition-all"
-              >
-                <LuPen size={16} />
-                <span className="hidden md:inline">Add Transaction</span>
-              </Button>
-            </Link>
-          </Show>
-
-          {/* Signed Out Button */}
-          <Show when="signed-out">
-            <SignInButton forceRedirectUrl="/dashboard">
-              <Button
-                className="bg-[#1a1a16] hover:bg-[#2e2e28] text-[#faf9f6] rounded-none border-0 text-sm font-semibold tracking-wide transition-all px-6"
-              >
+          {!user && !loading && (
+            <Link href="/sign-in">
+              <Button size="sm" className="gradient text-white rounded-xl glow-emerald px-5">
                 Login
               </Button>
-            </SignInButton>
-          </Show>
-
-          {/* User Avatar */}
-          <Show when="signed-in">
-            <UserButton
-              appearance={{
-                elements: {
-                  avatarBox:
-                    "w-9 h-9 ring-1 ring-[#5a7a52]/40 hover:ring-[#5a7a52] transition-all rounded-full",
-                },
-              }}
-            />
-          </Show>
-
+            </Link>
+          )}
         </div>
       </nav>
     </header>
