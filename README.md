@@ -3,10 +3,6 @@
    <p>An AI-powered personal finance platform — track expenses, automate recurring transactions, scan receipts, and get monthly insights powered by Groq AI.</p>
 
   <p>
-    <a href="https://uni-finance-delta.vercel.app"><strong>Live Demo →</strong></a>
-  </p>
-
-  <p>
     <img src="https://img.shields.io/github/contributors/himanshuvkm/FinTrack.svg?style=flat-square" />
     <img src="https://img.shields.io/github/stars/himanshuvkm/FinTrack.svg?style=flat-square" />
     <img src="https://img.shields.io/github/forks/himanshuvkm/FinTrack.svg?style=flat-square" />
