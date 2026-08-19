@@ -13,10 +13,6 @@
 
 ---
 
-![Product Screenshot](https://github.com/himanshuvkm/FinTrack/blob/main/public/Preview.png?raw=true)
-
----
-
 ## What is UniFinance?
 
 UniFinance gives you a clear, real-time picture of your financial life. Log income and expenses, set budgets with alert thresholds, automate recurring payments, and let AI analyse your spending patterns — all in one place.
