@@ -271,7 +271,6 @@ export default function TransactionSearchPage() {
                       mode="single"
                       selected={dateFrom}
                       onSelect={setDateFrom}
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
@@ -295,7 +294,6 @@ export default function TransactionSearchPage() {
                       mode="single"
                       selected={dateTo}
                       onSelect={setDateTo}
-                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
