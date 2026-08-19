@@ -209,12 +209,3 @@ Please follow [Conventional Commits](https://www.conventionalcommits.org/) for c
 
 Distributed under the **MIT License**. See [`LICENSE`](./LICENSE) for details.
 
----
-
-## Contact
-
-**Himanshu Vishwakarma**
-- Email: himanshuvkm252@gmail.com
-- GitHub: [@himanshuvkm](https://github.com/himanshuvkm)
-- LinkedIn: [himanshuvkm](https://linkedin.com/in/himanshuvkm)
-- Project: [github.com/himanshuvkm/UniFinance](https://github.com/himanshuvkm/UniFinance)
