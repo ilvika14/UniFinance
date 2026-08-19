@@ -308,7 +308,7 @@ export async function searchTransactions(filters: SearchFilters) {
     const where: Prisma.TransactionWhereInput = { userId: user.id };
 
     if (filters.query) {
-      where.description = { contains: filters.query, mode: "insensitive" };
+      where.description = { contains: filters.query, mode: "insensitive" } as Prisma.StringNullableFilter;
     }
     if (filters.type) {
       where.type = filters.type;
