@@ -2,7 +2,8 @@ import { inngest } from "./client";
 import { db as prismaDb } from "@/lib/prisma";
 import EmailTemplate from "@/emails/template";
 import { sendEmail } from "@/actions/send-email";
-import { GoogleGenAI } from "@google/genai";
+import { generateContentWithRetry } from "@/lib/grok-retry";
+import { calculateNextRecurringDate } from "@/lib/utils";
 
 type TransactionRow = {
   id: string;
@@ -95,9 +96,9 @@ export const checkBudgetAlerts = inngest.createFunction(
               userName: budget.user.name ?? undefined,
               type: "budget-alert",
               data: {
-                percentageUsed: percentageUsed.toFixed(1),
-                budgetAmount: budgetAmount.toFixed(1),
-                totalExpenses: totalExpenses.toFixed(1),
+                percentageUsed: Number(percentageUsed.toFixed(1)),
+                budgetAmount: Number(budgetAmount.toFixed(1)),
+                totalExpenses: Number(totalExpenses.toFixed(1)),
                 accountName: defaultAccount.name,
               },
             }),
@@ -232,25 +233,6 @@ export const processRecurringTransaction = inngest.createFunction(
   }
 );
 
-function calculateNextRecurringDate(date: Date, interval: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY") {
-  const next = new Date(date);
-  switch (interval) {
-    case "DAILY":
-      next.setDate(next.getDate() + 1);
-      break;
-    case "WEEKLY":
-      next.setDate(next.getDate() + 7);
-      break;
-    case "MONTHLY":
-      next.setMonth(next.getMonth() + 1);
-      break;
-    case "YEARLY":
-      next.setFullYear(next.getFullYear() + 1);
-      break;
-  }
-  return next;
-}
-
 
 function isTransactionDue(transaction: {
   lastProcessed: Date | null;
@@ -271,8 +253,6 @@ export async function generateFinancialInsights(
   stats: MonthlyStats,
   month: string
 ) {
-  const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-
   const expenseList =
     stats.byCategory && Object.keys(stats.byCategory).length > 0
       ? Object.entries(stats.byCategory)
@@ -297,15 +277,13 @@ export async function generateFinancialInsights(
   `;
 
   try {
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
-    console.log(result)
-    const text = await result.text || " ";
-    const cleanedText = text.match(/\[[\s\S]*\]/);
+    const result = await generateContentWithRetry("llama-3.3-70b-versatile", prompt);
+    const raw = (result || "").replace(/<think>[\s\S]*?<\/think>/gi, "");
+    const arrayStart = raw.indexOf("[");
+    const arrayEnd = raw.lastIndexOf("]");
+    const cleanedText = arrayStart !== -1 && arrayEnd !== -1 ? raw.substring(arrayStart, arrayEnd + 1) : null;
 
-    return JSON.parse(cleanedText ? cleanedText[0] : '[]');
+    return JSON.parse(cleanedText ? cleanedText : '[]');
   } catch (error) {
     console.error("Error generating insights:", error);
     return [

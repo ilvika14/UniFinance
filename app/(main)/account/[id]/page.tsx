@@ -4,6 +4,7 @@ import React, { Suspense } from "react";
 import { BarLoader } from "react-spinners";
 import TransactionTable from "../_components/transaction-table";
 import AccountChart from "../_components/AccountChart";
+import { formatCurrency } from "@/lib/currencies";
 
 export const metadata = { title: "Account Overview - UniFinance" };
 
@@ -25,7 +26,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               <h1 id="account-title" className="text-3xl font-bold tracking-tight text-foreground">{account.name}</h1>
             </div>
             <div className="sm:text-right">
-              <p className="text-3xl font-bold tracking-tight text-foreground">${Number(account.balance).toFixed(2)}</p>
+              <p className="text-3xl font-bold tracking-tight text-foreground">{formatCurrency(Number(account.balance), account.currency)}</p>
               <p className="mt-1 text-xs text-muted-foreground font-medium">
                 {account._count?.transactions ?? 0} transaction{(account._count?.transactions ?? 0) !== 1 ? "s" : ""}
               </p>
@@ -36,14 +37,14 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <div>
           <h2 className="text-lg font-bold text-foreground mb-4">Income vs Expenses</h2>
           <Suspense fallback={<BarLoader width="100%" color="#34d399" className="mt-2" />}>
-            <AccountChart transactions={transactions} />
+            <AccountChart transactions={transactions} currency={account.currency} />
           </Suspense>
         </div>
 
         <div>
           <h2 className="text-lg font-bold text-foreground mb-4">Transaction History</h2>
           <Suspense fallback={<BarLoader width="100%" color="#34d399" className="mt-2" />}>
-            <TransactionTable transactions={transactions} />
+            <TransactionTable transactions={transactions} currency={account.currency} />
           </Suspense>
         </div>
       </div>

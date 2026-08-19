@@ -1,6 +1,6 @@
 <div align="center">
   <h1>UniFinance</h1>
-  <p>An AI-powered personal finance platform — track expenses, automate recurring transactions, scan receipts, and get monthly insights powered by Gemini AI.</p>
+   <p>An AI-powered personal finance platform — track expenses, automate recurring transactions, scan receipts, and get monthly insights powered by Groq AI.</p>
 
   <p>
     <a href="https://finnntrack.vercel.app"><strong>Live Demo →</strong></a>
@@ -35,7 +35,7 @@ UniFinance gives you a clear, real-time picture of your financial life. Log inco
 | **Transaction management** | Add, edit, and categorise transactions with full history |
 | **Budget tracking** | Set per-category budgets; receive email alerts when you approach limits |
 | **Recurring transactions** | Automate repeating income or expenses — daily, weekly, or monthly |
-| **AI receipt scanning** | Upload a receipt and Gemini AI extracts the amount, merchant, and category |
+| **AI receipt scanning** | Upload a receipt and Groq AI extracts the amount, merchant, and category |
 | **Monthly AI reports** | Personalised financial health summaries delivered to your inbox each month |
 | **Secure auth** | JWT-based authentication with OAuth (Google) support |
 | **Rate limiting** | Arcjet protects all API routes from abuse |
@@ -54,7 +54,7 @@ UniFinance gives you a clear, real-time picture of your financial life. Log inco
 - [Prisma](https://www.prisma.io/) — type-safe ORM
 
 **Services**
-- [Gemini AI](https://ai.google.dev/) — receipt scanning and monthly insights
+- [Groq AI](https://groq.com/) — receipt scanning and monthly insights
 - [Inngest](https://www.inngest.com/) — background jobs for recurring transactions and reports
 - [Resend](https://resend.com/) — transactional email (budget alerts, monthly reports)
 - [Arcjet](https://arcjet.com/) — rate limiting and bot protection
@@ -73,7 +73,7 @@ UniFinance gives you a clear, real-time picture of your financial life. Log inco
 
 - Node.js v18 or higher
 - A [Google Cloud](https://console.cloud.google.com/) project (for OAuth)
-- A [Gemini AI](https://ai.google.dev/) API key
+- A [Groq AI](https://console.groq.com) API key
 
 ### Installation
 
@@ -129,8 +129,8 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
 
-# Gemini AI — https://aistudio.google.com/app/apikey
-GEMINI_API_KEY=your-gemini-api-key
+# Groq AI — https://console.groq.com
+GROQ_API_KEY=your-groq-api-key
 
 # Resend — https://resend.com/api-keys
 RESEND_API_KEY=your-resend-api-key
@@ -143,11 +143,11 @@ INNGEST_SIGNING_KEY=your-inngest-signing-key
 ARCJET_KEY=your-arcjet-key
 ```
 
-### Gemini API Key
+### Groq API Key
 
-1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
+1. Go to [Groq Console](https://console.groq.com)
 2. Create a new API key
-3. Add it to your `.env.local` as `GEMINI_API_KEY`
+3. Add it to your `.env.local` as `GROQ_API_KEY`
 4. The AI receipt scanner and monthly reports use this key
 
 ---

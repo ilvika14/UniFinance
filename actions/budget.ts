@@ -80,7 +80,6 @@ export async function updateBudget(amount: number) {
     };
 
 } catch (error: unknown) {
-    console.log("Error updating budget",error)
     const message = error instanceof Error ? error.message : String(error);
     return { success: false, error: message };
   }

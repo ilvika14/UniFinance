@@ -95,7 +95,7 @@ export default function Testimonials() {
             <motion.div
               key={index}
               variants={cardVariants}
-              className="group glass-card rounded-2xl p-7 border-glow hover-lift flex flex-col"
+              className="group glass-card rounded-2xl p-7 hover-lift flex flex-col"
             >
               {/* Stars */}
               <div className="flex gap-1 mb-5">
@@ -132,7 +132,7 @@ export default function Testimonials() {
           className="mt-16 text-center"
         >
           <Link href="/dashboard">
-            <Button className="gradient text-white rounded-2xl glow-emerald px-10 py-7 text-sm font-semibold flex items-center gap-2 mx-auto group">
+            <Button className="gradient text-white rounded-2xl px-10 py-7 text-sm font-semibold flex items-center gap-2 mx-auto group">
               Start for Free
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>

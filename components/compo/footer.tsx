@@ -66,7 +66,7 @@ export default function UniFinanceFooter() {
             <img
               src="/logo_unif.png"
               alt="UniFinance"
-              className="h-9 w-auto mb-1"
+              className="h-12 w-auto mb-1"
               style={{ filter: "hue-rotate(70deg) saturate(1.2)" }}
             />
             <p className="text-xs text-muted-foreground mt-3 leading-relaxed">

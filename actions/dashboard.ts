@@ -2,23 +2,15 @@
 import { db as prismaDb } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getOrCreateUser } from "@/lib/get-user";
+import { serializeAmount } from "@/lib/utils";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-function serializeTransaction(obj: any): any {
-  const serialized = { ...obj };
-
-  if (obj.balance && typeof obj.balance === "object" && obj.balance !== null && "toNumber" in obj.balance) {
-    serialized.balance = obj.balance.toNumber();
-  }
-  if (obj.amount && typeof obj.amount === "object" && obj.amount !== null && "toNumber" in obj.amount) {
-    serialized.amount = obj.amount.toNumber();
-  }
-  return serialized;
-}
-/* eslint-enable @typescript-eslint/no-explicit-any */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-export async function createAccount(data: any) {
+export async function createAccount(data: {
+  name: string;
+  type: string;
+  balance: string;
+  currency?: string;
+  isDefault?: boolean;
+}) {
   try {
     const User = await getOrCreateUser();
 
@@ -34,7 +26,7 @@ export async function createAccount(data: any) {
     });
 
     const shouldBeDefault =
-      existingAccount.length === 0 ? true : data.isdefault;
+      existingAccount.length === 0 ? true : data.isDefault;
 
     if (shouldBeDefault) {
       await prismaDb.account.updateMany({
@@ -57,7 +49,7 @@ export async function createAccount(data: any) {
       },
     });
 
-    const serializedAccount = serializeTransaction(account);
+    const serializedAccount = serializeAmount(account);
     revalidatePath("/dashboard");
     return { success: true, data: serializedAccount };
   } catch (error: unknown) {
@@ -83,7 +75,7 @@ export async function GetUserAccounts() {
         }
       }
     });
-    const serializedAccount = accounts.map(serializeTransaction);
+    const serializedAccount = accounts.map(serializeAmount);
     return { success: true, data: serializedAccount };
 
   } catch (error: unknown) {
@@ -94,12 +86,17 @@ export async function GetUserAccounts() {
 }
 
 export async function getDashboardData() {
-  const User = await getOrCreateUser();
+  try {
+    const User = await getOrCreateUser();
 
-  const transactions = await prismaDb.transaction.findMany({
-    where: { userId: User.id },
-    orderBy: { date: "desc" },
-  });
+    const transactions = await prismaDb.transaction.findMany({
+      where: { userId: User.id },
+      orderBy: { date: "desc" },
+    });
 
-  return transactions.map(serializeTransaction);
+    return { success: true, data: transactions.map(serializeAmount) };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message, data: [] };
+  }
 }

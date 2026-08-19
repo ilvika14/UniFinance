@@ -7,12 +7,15 @@ import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { SensitiveValue } from "./BalanceVisibility";
+import { formatCurrency } from "@/lib/currencies";
 
 export interface Account {
   id: string;
   name: string;
   type: string;
-  balance: string;
+  balance: string | number;
+  currency?: string;
   isDefault: boolean;
 }
 
@@ -21,7 +24,7 @@ interface Props {
 }
 
 export default function AccountCard({ account }: Props) {
-  const { id, name, type, balance, isDefault } = account;
+  const { id, name, type, balance, currency, isDefault } = account;
 
   const { data: updatedAccount, error, loading: updateAccountLoading, fn: updateDefaultFn } = useFetch(updateDefaultAccount);
 
@@ -39,7 +42,7 @@ export default function AccountCard({ account }: Props) {
 
   return (
     <Link href={`/account/${id}`} className="group block">
-      <div className="relative min-h-[200px] glass rounded-xl hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300 flex flex-col">
+      <div className="relative min-h-[200px] glass rounded-xl hover:shadow-lg hover:border-primary/20 transition-all duration-300 flex flex-col">
         <div className="absolute top-0 left-0 w-full h-0.5 bg-primary/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-xl" />
 
         <div className="flex flex-row items-start justify-between px-5 pt-5 pb-2">
@@ -55,9 +58,11 @@ export default function AccountCard({ account }: Props) {
         </div>
 
         <div className="flex-1 px-5 py-3">
-          <p className="text-2xl font-bold text-foreground tracking-tight">
-            ${parseFloat(balance).toFixed(2)}
-          </p>
+          <SensitiveValue>
+            <p className="text-2xl font-bold text-foreground tracking-tight">
+              {formatCurrency(Number(balance), currency)}
+            </p>
+          </SensitiveValue>
           {isDefault && (
             <span className="inline-block mt-2 bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-semibold rounded-lg">
               Default

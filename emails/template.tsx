@@ -100,7 +100,7 @@ export default function EmailTemplate({
             {/* Insights */}
             {insights?.length > 0 && (
               <Section style={styles.section}>
-                <Heading style={styles.heading}>Welth Insights</Heading>
+                <Heading style={styles.heading}>UniFinance Insights</Heading>
                 {insights.map((insight, i) => (
                   <Text key={i} style={styles.text}>
                     • {insight}
@@ -110,7 +110,7 @@ export default function EmailTemplate({
             )}
 
             <Text style={styles.footer}>
-              Thank you for using Welth. Stay consistent to improve your
+              Thank you for using UniFinance. Stay consistent to improve your
               financial health!
             </Text>
           </Container>

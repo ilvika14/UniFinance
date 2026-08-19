@@ -7,19 +7,20 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { categoryColors } from "@/data/category";
 import { format } from "date-fns";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock, MoreHorizontal, RefreshCw, Search, Trash, X } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Clock, MoreHorizontal, RefreshCw, Search, Trash, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import useFetch from "@/hooks/usefetch";
 import { bulkDeleteTransactions } from "@/actions/account";
 import { toast } from "sonner";
 import { BarLoader } from "react-spinners";
+import { formatCurrency } from "@/lib/currencies";
 
 const RECURRING_INTERVALS = { DAILY: "Daily", WEEKLY: "Weekly", MONTHLY: "Monthly", YEARLY: "Yearly" };
 
 export interface Transaction {
   id: string; date: Date | string; description: string | null; category: string;
-  amount: string | number; accountId: string; type: "INCOME" | "EXPENSE";
+  amount: string | number; accountId: string; type: string;
   isRecurring: boolean; recurringInterval?: string | null; nextRecurringDate?: string | Date | null;
 }
 
@@ -28,14 +29,16 @@ function SortIcon({ field, currentSort }: { field: string; currentSort: { field:
   return currentSort.direction === "asc" ? <ChevronUp className="h-3 w-3 text-primary" /> : <ChevronDown className="h-3 w-3 text-primary" />;
 }
 
-export default function TransactionTable({ transactions }: { transactions: Transaction[] }) {
+export default function TransactionTable({ transactions, currency = "INR" }: { transactions: Transaction[]; currency?: string }) {
   const router = useRouter();
-  const [seletedIds, setSeletedIds] = useState<string[]>([]);
+  const [selectedIds, setSeletedIds] = useState<string[]>([]);
   const [sortConfig, setSortConfig] = useState({ field: "date", direction: "desc" });
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [recurringFilter, setRecurringFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
   const ITEMS_PER_PAGE = 10;
 
   const filteredAndSortedTransactions = useMemo(() => {
@@ -58,7 +61,18 @@ export default function TransactionTable({ transactions }: { transactions: Trans
   const handleSort = (field: string) => { setSortConfig((c) => ({ field, direction: c.field === field && c.direction === "asc" ? "desc" : "asc" })); };
 
   const { loading: deleteLoading, fn: deleteFn, data: deleted } = useFetch(bulkDeleteTransactions);
-  useEffect(() => { if (deleted && !deleteLoading) { toast.success("Transactions deleted successfully"); setSeletedIds([]); } }, [deleted, deleteLoading]);
+  useEffect(() => { if (deleted && !deleteLoading) { toast.success("Transactions deleted successfully"); setSeletedIds([]); setDeleteConfirmOpen(false); setPendingDeleteIds([]); } }, [deleted, deleteLoading]);
+
+  const confirmDelete = (ids: string[]) => {
+    setPendingDeleteIds(ids);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (pendingDeleteIds.length > 0) {
+      deleteFn(pendingDeleteIds);
+    }
+  };
 
   return (
     <section aria-labelledby="transactions-title" className="space-y-4">
@@ -98,9 +112,9 @@ export default function TransactionTable({ transactions }: { transactions: Trans
           </button>
         )}
 
-        {seletedIds.length > 0 && (
-          <button onClick={() => deleteFn(seletedIds)} className="flex items-center gap-2 bg-destructive hover:opacity-80 text-white text-sm font-semibold px-4 h-9 rounded-xl transition-all">
-            <Trash className="h-3.5 w-3.5" />Delete ({seletedIds.length})
+        {selectedIds.length > 0 && (
+          <button onClick={() => confirmDelete(selectedIds)} className="flex items-center gap-2 bg-destructive hover:opacity-80 text-white text-sm font-semibold px-4 h-9 rounded-xl transition-all">
+            <Trash className="h-3.5 w-3.5" />Delete ({selectedIds.length})
           </button>
         )}
       </div>
@@ -109,7 +123,21 @@ export default function TransactionTable({ transactions }: { transactions: Trans
         <Table>
           <TableHeader>
             <TableRow className="border-b border-border hover:bg-transparent">
-              <TableHead className="w-10" />
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={paginatedTransactions.length > 0 && paginatedTransactions.every((t) => selectedIds.includes(t.id))}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      const newIds = paginatedTransactions.map((t) => t.id);
+                      setSeletedIds((prev) => [...new Set([...prev, ...newIds])]);
+                    } else {
+                      const pageIds = new Set(paginatedTransactions.map((t) => t.id));
+                      setSeletedIds((prev) => prev.filter((id) => !pageIds.has(id)));
+                    }
+                  }}
+                  className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                />
+              </TableHead>
               <TableHead onClick={() => handleSort("date")} className="cursor-pointer text-muted-foreground text-xs font-semibold uppercase tracking-wider hover:text-foreground transition-colors">
                 <span className="flex items-center gap-1">Date <SortIcon field="date" currentSort={sortConfig} /></span>
               </TableHead>
@@ -131,16 +159,16 @@ export default function TransactionTable({ transactions }: { transactions: Trans
               paginatedTransactions.map((t) => (
                 <TableRow key={t.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
                   <TableCell>
-                    <Checkbox checked={seletedIds.includes(t.id)} onCheckedChange={() => setSeletedIds((c) => c.includes(t.id) ? c.filter((i) => i !== t.id) : [...c, t.id])}
+                    <Checkbox checked={selectedIds.includes(t.id)} onCheckedChange={() => setSeletedIds((c) => c.includes(t.id) ? c.filter((i) => i !== t.id) : [...c, t.id])}
                       className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{format(new Date(t.date), "PP")}</TableCell>
                   <TableCell className="text-foreground text-sm font-medium">{t.description}</TableCell>
                   <TableCell>
-                    <span style={{ background: categoryColors[t.category] }} className="px-2 py-1 text-[10px] font-semibold text-white rounded-lg">{t.category}</span>
+                    <span style={{ background: categoryColors[t.category] || "#64748b" }} className="px-2 py-1 text-[10px] font-semibold text-white rounded-lg">{t.category}</span>
                   </TableCell>
                   <TableCell className={`text-sm font-semibold ${t.type === "INCOME" ? "text-primary" : "text-destructive"}`}>
-                    {t.type === "INCOME" ? "+" : "-"}${t.amount}
+                    {t.type === "INCOME" ? "+" : "-"}{formatCurrency(Number(t.amount), currency)}
                   </TableCell>
                   <TableCell>
                     {t.isRecurring ? (
@@ -163,7 +191,7 @@ export default function TransactionTable({ transactions }: { transactions: Trans
                       <DropdownMenuContent className="bg-card border-border rounded-xl">
                         <DropdownMenuItem onClick={() => router.push(`/transactions/create?edit=${t.id}`)} className="text-sm rounded-lg cursor-pointer">Edit</DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-border" />
-                        <DropdownMenuItem onClick={() => deleteFn([t.id])} className="text-destructive text-sm rounded-lg cursor-pointer">Delete</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => confirmDelete([t.id])} className="text-destructive text-sm rounded-lg cursor-pointer">Delete</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -185,6 +213,34 @@ export default function TransactionTable({ transactions }: { transactions: Trans
             className="w-9 h-9 border border-border rounded-xl hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center justify-center">
             <ChevronRight className="h-4 w-4" />
           </button>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDeleteConfirmOpen(false)} />
+          <div className="relative bg-card border border-border rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 z-50">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
+                <AlertTriangle className="h-6 w-6 text-destructive" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">Delete Transaction{pendingDeleteIds.length > 1 ? "s" : ""}?</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  This will permanently delete {pendingDeleteIds.length} transaction{pendingDeleteIds.length > 1 ? "s" : ""} and adjust account balances. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-6">
+              <button onClick={() => setDeleteConfirmOpen(false)} className="px-4 h-9 text-sm font-semibold text-foreground bg-muted hover:bg-muted/80 rounded-xl transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleConfirmDelete} disabled={deleteLoading} className="px-4 h-9 text-sm font-semibold text-white bg-destructive hover:bg-destructive/90 rounded-xl transition-colors disabled:opacity-50">
+                {deleteLoading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>

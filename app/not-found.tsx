@@ -31,7 +31,7 @@ const NotFoundPage: React.FC = () => {
           </p>
           <div className="mt-6">
             <Link href="/">
-              <Button className="gradient text-white rounded-xl glow-emerald px-6">Go back home</Button>
+              <Button className="gradient text-white rounded-xl px-6">Go back home</Button>
             </Link>
           </div>
           <div className="mt-6 text-xs text-muted-foreground">

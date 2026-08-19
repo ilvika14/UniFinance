@@ -15,9 +15,10 @@ model User {
   imageUrl      String?
   provider      String    @default("local")
   googleId      String?   @unique
-  transactions  Transaction[]
-  accounts      Account[]
-  budgets       Budget[]
+  transactions      Transaction[]
+  accounts          Account[]
+  budgets           Budget[]
+  passwordResetTokens PasswordResetToken[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -26,6 +27,7 @@ model Account {
   id           String        @id @default(uuid())
   name         String
   type         String
+  currency     String      @default("INR")
   balance      Float       @default(0)
   isDefault    Boolean     @default(false)
   userId       String
@@ -70,5 +72,18 @@ model Budget {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([token])
   @@index([userId])
 }

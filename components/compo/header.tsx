@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { LuLayoutDashboard, LuPen, LuLogOut, LuUser } from "react-icons/lu";
-import { HiOutlineHome, HiOutlineSun, HiOutlineMoon } from "react-icons/hi2";
+import { LuPen, LuLogOut, LuUser } from "react-icons/lu";
+import { HiOutlineHome, HiOutlineSun, HiOutlineMoon, HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -54,7 +54,7 @@ export default function Header() {
           <img
             src="/logo_unif.png"
             alt="UniFinance"
-            className="h-12 w-auto group-hover:scale-105 transition-transform duration-300"
+            className="h-16 w-auto group-hover:scale-105 transition-transform duration-300"
             style={{ filter: "hue-rotate(70deg) saturate(1.2)" }}
           />
         </Link>
@@ -65,10 +65,6 @@ export default function Header() {
             <>
               <a href="#features" className="relative text-muted-foreground hover:text-foreground text-sm font-medium px-3 py-2 rounded-xl hover:bg-muted/50 transition-all group">
                 Features
-                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-0 h-0.5 gradient rounded-full transition-all duration-300 group-hover:w-6" />
-              </a>
-              <a href="#testimonials" className="relative text-muted-foreground hover:text-foreground text-sm font-medium px-3 py-2 rounded-xl hover:bg-muted/50 transition-all group">
-                Testimonials
                 <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-0 h-0.5 gradient rounded-full transition-all duration-300 group-hover:w-6" />
               </a>
             </>
@@ -102,20 +98,20 @@ export default function Header() {
           {/* Auth buttons */}
           {user && (
             <>
-              <Link href="/">
+              <Link href="/dashboard">
                 <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground rounded-xl">
                   <HiOutlineHome size={16} />
                   <span className="hidden md:inline">Home</span>
                 </Button>
               </Link>
-              <Link href="/dashboard">
+              <Link href="/transactions/search">
                 <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground rounded-xl">
-                  <LuLayoutDashboard size={16} />
-                  <span className="hidden md:inline">Dashboard</span>
+                  <HiOutlineMagnifyingGlass size={16} />
+                  <span className="hidden md:inline">Search</span>
                 </Button>
               </Link>
               <Link href="/transactions/create">
-                <Button size="sm" className="gap-2 gradient text-white rounded-xl glow-emerald">
+                <Button size="sm" className="gap-2 gradient text-white rounded-xl">
                   <LuPen size={16} />
                   <span className="hidden md:inline">Add</span>
                 </Button>
@@ -133,7 +129,7 @@ export default function Header() {
 
           {!user && !loading && (
             <Link href="/sign-in">
-              <Button size="sm" className="gradient text-white rounded-xl glow-emerald px-5">
+              <Button size="sm" className="gradient text-white rounded-xl px-5">
                 Login
               </Button>
             </Link>

@@ -5,8 +5,9 @@ import useFetch from "@/hooks/usefetch";
 import { Check, Pencil, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/currencies";
 
-export default function BudgetProgress({ initialBudget, currentExpenses }: { initialBudget: { amount: number } | null; currentExpenses: number }) {
+export default function BudgetProgress({ initialBudget, currentExpenses, currency = "INR" }: { initialBudget: { amount: number } | null; currentExpenses: number; currency?: string }) {
   const [isEditing, setIsEditing] = useState(false);
   const [newBudget, setNewBudget] = useState(initialBudget?.amount?.toString() || "");
 
@@ -56,7 +57,7 @@ export default function BudgetProgress({ initialBudget, currentExpenses }: { ini
             ) : (
               <div className="flex items-center gap-3">
                 <p className="text-sm text-muted-foreground">
-                  {initialBudget ? `$${currentExpenses.toFixed(2)} of $${initialBudget.amount.toFixed(2)} spent` : "No budget set"}
+                  {initialBudget ? `${formatCurrency(currentExpenses, currency)} of ${formatCurrency(initialBudget.amount, currency)} spent` : "No budget set"}
                 </p>
                 <button onClick={() => setIsEditing(true)} className="w-7 h-7 border border-border text-muted-foreground hover:border-primary hover:text-primary rounded-lg transition flex items-center justify-center">
                   <Pencil className="h-3 w-3" />

@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { format, endOfDay, startOfDay, subDays } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatCurrency } from "@/lib/currencies";
 
 const DATE_RANGES = {
   "7D": { label: "Last 7 Days", days: 7 },
@@ -18,7 +19,7 @@ type RangeKey = keyof typeof DATE_RANGES;
 
 interface Totals { income: number; expense: number; }
 
-export default function AccountChart({ transactions }: { transactions: Transaction[] }) {
+export default function AccountChart({ transactions, currency = "INR" }: { transactions: Transaction[]; currency?: string }) {
   const [dateRange, setDateRange] = useState<RangeKey>("1M");
 
   const filteredData = useMemo(() => {
@@ -66,15 +67,15 @@ export default function AccountChart({ transactions }: { transactions: Transacti
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="bg-muted/50 rounded-xl border border-border p-4">
               <p className="text-xs text-muted-foreground font-medium">Total Income</p>
-              <p className="mt-1 text-xl font-bold text-primary">${totals.income.toFixed(2)}</p>
+              <p className="mt-1 text-xl font-bold text-primary">{formatCurrency(totals.income, currency)}</p>
             </div>
             <div className="bg-muted/50 rounded-xl border border-border p-4">
               <p className="text-xs text-muted-foreground font-medium">Total Expenses</p>
-              <p className="mt-1 text-xl font-bold text-destructive">${totals.expense.toFixed(2)}</p>
+              <p className="mt-1 text-xl font-bold text-destructive">{formatCurrency(totals.expense, currency)}</p>
             </div>
             <div className="bg-muted/50 rounded-xl border border-border p-4">
               <p className="text-xs text-muted-foreground font-medium">Net Balance</p>
-              <p className={`mt-1 text-xl font-bold ${net >= 0 ? "text-primary" : "text-destructive"}`}>${net.toFixed(2)}</p>
+              <p className={`mt-1 text-xl font-bold ${net >= 0 ? "text-primary" : "text-destructive"}`}>{formatCurrency(net, currency)}</p>
             </div>
           </div>
 
@@ -83,8 +84,8 @@ export default function AccountChart({ transactions }: { transactions: Transacti
               <BarChart data={filteredData}>
                 <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="date" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} tickLine={false} axisLine={false} />
-                <YAxis tickFormatter={(v) => `$${v}`} tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} tickLine={false} axisLine={false} />
-                <Tooltip formatter={(v) => `$${v}`}
+                <YAxis tickFormatter={(v) => formatCurrency(v, currency)} tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} tickLine={false} axisLine={false} />
+                <Tooltip formatter={(v) => formatCurrency(Number(v), currency)}
                   contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "12px", color: "var(--foreground)", fontSize: "12px" }} />
                 <Legend />
                 <Bar dataKey="income" name="Income" fill="#34d399" radius={[6, 6, 0, 0]} />

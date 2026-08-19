@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 import Header from "@/components/compo/header";
+import ThemeProvider from "@/components/ui/theme-provider";
+import CommandPalette from "@/components/compo/command-palette";
+import KeyboardShortcuts from "@/components/compo/keyboard-shortcuts";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,13 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider>
           <Header />
+          <CommandPalette />
+          <KeyboardShortcuts />
           <main className="min-h-screen">{children}</main>
         </ThemeProvider>
       </body>

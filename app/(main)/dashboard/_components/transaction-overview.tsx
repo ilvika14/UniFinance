@@ -7,6 +7,7 @@ import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Account } from "./accountCard";
 import { Transaction } from "../../account/_components/transaction-table";
+import { formatCurrency, getCurrencyByCode } from "@/lib/currencies";
 
 const COLORS = ["#34d399", "#fb7185", "#a78bfa", "#fbbf24", "#22d3ee", "#a1a1aa"];
 
@@ -14,6 +15,8 @@ interface Props { accounts: Account[]; transactions: Transaction[]; }
 
 export const DashboardOverview = memo(function DashboardOverview({ accounts, transactions }: Props) {
   const [selectedAccountId, setSelectedAccountId] = useState(accounts.find((a) => a.isDefault)?.id ?? accounts[0]?.id);
+  const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
+  const currency = selectedAccount?.currency ?? "INR";
 
   const accountTransactions = useMemo(() => transactions.filter((t) => t.accountId === selectedAccountId), [transactions, selectedAccountId]);
 
@@ -62,7 +65,7 @@ export const DashboardOverview = memo(function DashboardOverview({ accounts, tra
                 </div>
                 <div className={`flex items-center gap-1 text-sm font-semibold ${transaction.type === "EXPENSE" ? "text-destructive" : "text-primary"}`}>
                   {transaction.type === "EXPENSE" ? <ArrowDownRight className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
-                  ${Number(transaction.amount).toFixed(2)}
+                  {formatCurrency(Number(transaction.amount), currency)}
                 </div>
               </div>
             ))
@@ -87,7 +90,7 @@ export const DashboardOverview = memo(function DashboardOverview({ accounts, tra
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => `$${Number(value ?? 0).toFixed(2)}`}
+                  <Tooltip formatter={(value) => formatCurrency(Number(value ?? 0), currency)}
                     contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: "12px", fontSize: "12px", color: "var(--foreground)" }} />
                   <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{ fontSize: "11px" }} />
                 </PieChart>

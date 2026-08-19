@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ interface ReceiptScannerProps {
 
 export function ReceiptScanner({ onScanComplete }: ReceiptScannerProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const isScanningRef = useRef(false);
 
   // Assuming scanReceipt returns any (you can refine later)
   const {
@@ -33,16 +34,19 @@ export function ReceiptScanner({ onScanComplete }: ReceiptScannerProps) {
     error: scanError,
   } = useFetch(scanReceipt);
 
-  const handleReceiptScan = async (file: File) => {
+  const handleReceiptScan = useCallback(async (file: File) => {
+    if (isScanningRef.current) return;
+
     if (file.size > 5 * 1024 * 1024) {
       toast.error("File size should be less than 5MB");
       return;
     }
 
+    isScanningRef.current = true;
     const formData = new FormData();
     formData.append("file", file);
     await scanReceiptFn(formData);
-  };
+  }, [scanReceiptFn]);
 
 
 // inside ReceiptScanner:
@@ -53,17 +57,35 @@ useEffect(() => {
   if (scanReceiptLoading) return;
 
   if (scanError) {
+    isScanningRef.current = false;
     toast.error(scanError);
     return;
   }
     
   if (!scannedData) return;
 
-   const sd = scannedData as {
+  isScanningRef.current = false;
+
+  const result = scannedData as {
+    success: boolean;
+    error?: string;
     amount?: number | string;
     date?: string | Date;
+    description?: string;
+    category?: string;
     merchantName?: string;
   } | null;
+
+  if (!result?.success) {
+    toast.error(result?.error || "Failed to scan receipt");
+    return;
+  }
+
+   const sd = {
+    amount: result.amount,
+    date: result.date,
+    merchantName: result.merchantName,
+   };
 
   // simple deep-check key: if scannedData is an object, you can compare JSON string
   const scannedId = (() => {
@@ -85,17 +107,17 @@ useEffect(() => {
   lastScannedRef.current = scannedId;
 
   try {
-    onScanComplete(scannedData);
+    onScanComplete(result);
     toast.success("Receipt scanned successfully");
   } catch (err) {
     console.error("onScanComplete handler threw:", err);
   }
-}, [scanReceiptLoading, scannedData, onScanComplete]);
+}, [scanReceiptLoading, scannedData, scanError, onScanComplete]);
 
 
   return (
 
-<div className="px-4 flex gap-4 bg-background pb-4 pt-2">
+<>
 
   <input
     type="file"
@@ -112,7 +134,7 @@ useEffect(() => {
   <motion.div
     whileHover={{ scale: 1.01 }}
     whileTap={{ scale: 0.99 }}
-    className="w-full"
+    className="flex-1"
   >
     <Button
       type="button"
@@ -139,7 +161,7 @@ useEffect(() => {
     </Button>
   </motion.div>
 
-</div>
+</>
 
   );
 }

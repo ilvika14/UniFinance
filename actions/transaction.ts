@@ -5,8 +5,9 @@ import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { request } from "@arcjet/next"
 import { aj } from "@/lib/arcjet";
-import { GoogleGenAI } from "@google/genai";
+import { generateVisionWithRetry, generateContentWithRetry } from "@/lib/grok-retry";
 import { getOrCreateUser } from "@/lib/get-user";
+import { calculateNextRecurringDate, serializeAmount } from "@/lib/utils";
 
 export type FormDataTransaction = {
   type: "INCOME" | "EXPENSE";
@@ -19,15 +20,6 @@ export type FormDataTransaction = {
   recurringInterval?: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY";
 };
 
-
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
-const serializeAmount = (obj: Record<string, unknown>) => ({
-  ...obj,
-  amount: typeof obj.amount === "object" && obj.amount !== null && "toNumber" in obj.amount
-    ? (obj.amount as { toNumber: () => number }).toNumber()
-    : Number(obj.amount),
-});
 
 export async function createTransaction(data: FormDataTransaction) {
   try {
@@ -83,7 +75,7 @@ export async function createTransaction(data: FormDataTransaction) {
           userId: user.id,
           nextRecurringDate:
             data.isRecurring && data.recurringInterval
-              ? calculateNextRecurringDate({ startDate: data.date, interval: data.recurringInterval })
+              ? calculateNextRecurringDate(data.date, data.recurringInterval)
               : null,
         },
       });
@@ -104,28 +96,6 @@ export async function createTransaction(data: FormDataTransaction) {
     const message = error instanceof Error ? error.message : String(error);
     return { success: false, error: message };
   }
-}
-
-
-function calculateNextRecurringDate({ startDate, interval }: { startDate: Date, interval: "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY" }) {
-  const date = new Date(startDate);
-
-  switch (interval) {
-    case "DAILY":
-      date.setDate(date.getDate() + 1);
-      break;
-    case "WEEKLY":
-      date.setDate(date.getDate() + 7);
-      break;
-    case "MONTHLY":
-      date.setMonth(date.getMonth() + 1);
-      break;
-    case "YEARLY":
-      date.setFullYear(date.getFullYear() + 1);
-      break;
-  }
-
-  return date;
 }
 
 export async function scanReceipt(formData: FormData) {
@@ -154,34 +124,21 @@ export async function scanReceipt(formData: FormData) {
       }
     `;
 
-    console.log("Gemini API key present:", !!process.env.GEMINI_API_KEY);
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              inlineData: {
-                data: base64String,
-                mimeType: file.type || "image/jpeg",
-              },
-            },
-            { text: prompt },
-          ],
-        },
-      ],
-    });
+    const responseText = await generateVisionWithRetry(
+      "qwen/qwen3.6-27b",
+      base64String,
+      file.type || "image/jpeg",
+      prompt
+    );
 
-    const responseText = result.text;
-
-    const cleanedText = (responseText || "")
-      .replace(/```json|```/g, "")
-      .trim();
-
-    const json = JSON.parse(cleanedText);
+    const raw = (responseText || "").replace(/<think>[\s\S]*?<\/think>/gi, "");
+    const jsonStart = raw.indexOf("{");
+    const jsonEnd = raw.lastIndexOf("}");
+    if (jsonStart === -1 || jsonEnd === -1) throw new Error("No JSON found in AI response");
+    const json = JSON.parse(raw.substring(jsonStart, jsonEnd + 1));
 
     return {
+      success: true as const,
       amount: Number(json.amount),
       date: new Date(json.date),
       description: json.description,
@@ -191,7 +148,7 @@ export async function scanReceipt(formData: FormData) {
   } catch (error) {
     console.error("Error scanning receipt:", error);
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to scan receipt: ${message}`);
+    return { success: false as const, error: message };
   }
 }
 
@@ -253,7 +210,7 @@ export async function updateTransaction(id: string, data: FormDataTransaction) {
           recurringInterval: data.recurringInterval ?? null,
           nextRecurringDate:
             data.isRecurring && data.recurringInterval
-              ? calculateNextRecurringDate({ startDate: data.date, interval: data.recurringInterval })
+              ? calculateNextRecurringDate(data.date, data.recurringInterval)
               : null,
         },
       });
@@ -294,15 +251,25 @@ export async function updateTransaction(id: string, data: FormDataTransaction) {
   }
 }
 
-export async function getUserTransactions(query = {}) {
+export async function getUserTransactions(query: Record<string, unknown> = {}) {
   try {
     const user = await getOrCreateUser();
 
+    const { type, category, accountId, date } = query as {
+      type?: string;
+      category?: string;
+      accountId?: string;
+      date?: { gte?: Date; lte?: Date };
+    };
+
+    const where: Record<string, unknown> = { userId: user.id };
+    if (type) where.type = type;
+    if (category) where.category = category;
+    if (accountId) where.accountId = accountId;
+    if (date) where.date = date;
+
     const transactions = await prismaDb.transaction.findMany({
-      where: {
-        userId: user.id,
-        ...query,
-      },
+      where,
       include: {
         account: true,
       },
@@ -315,5 +282,204 @@ export async function getUserTransactions(query = {}) {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     return { success: false, error: message };
+  }
+}
+
+export type SearchFilters = {
+  query?: string;
+  type?: string;
+  category?: string;
+  accountId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  amountMin?: number;
+  amountMax?: number;
+  page?: number;
+  pageSize?: number;
+};
+
+export async function searchTransactions(filters: SearchFilters) {
+  try {
+    const user = await getOrCreateUser();
+    const page = filters.page ?? 1;
+    const pageSize = filters.pageSize ?? 20;
+    const skip = (page - 1) * pageSize;
+
+    const where: Prisma.TransactionWhereInput = { userId: user.id };
+
+    if (filters.query) {
+      where.description = { contains: filters.query, mode: "insensitive" };
+    }
+    if (filters.type) {
+      where.type = filters.type;
+    }
+    if (filters.category) {
+      where.category = filters.category;
+    }
+    if (filters.accountId) {
+      where.accountId = filters.accountId;
+    }
+    if (filters.dateFrom || filters.dateTo) {
+      where.date = {};
+      if (filters.dateFrom) where.date.gte = new Date(filters.dateFrom);
+      if (filters.dateTo) where.date.lte = new Date(filters.dateTo);
+    }
+    if (filters.amountMin !== undefined || filters.amountMax !== undefined) {
+      where.amount = {};
+      if (filters.amountMin !== undefined) where.amount.gte = filters.amountMin;
+      if (filters.amountMax !== undefined) where.amount.lte = filters.amountMax;
+    }
+
+    const [transactions, total] = await Promise.all([
+      prismaDb.transaction.findMany({
+        where,
+        include: { account: true },
+        orderBy: { date: "desc" },
+        skip,
+        take: pageSize,
+      }),
+      prismaDb.transaction.count({ where }),
+    ]);
+
+    return {
+      success: true,
+      data: transactions.map(serializeAmount),
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false, error: message };
+  }
+}
+
+export type CsvMappedRow = {
+  date: string;
+  amount: string;
+  type: "INCOME" | "EXPENSE";
+  description: string;
+  category: string;
+  originalRow: Record<string, string>;
+};
+
+export async function analyzeCsv(
+  csvText: string,
+  categories: { id: string; name: string; type: string }[]
+) {
+  try {
+    const categoryList = categories
+      .map((c) => `${c.id} (${c.name}, ${c.type})`)
+      .join(", ");
+
+    const prompt = `You are a financial data analyst. Analyze this CSV data and map each row to a transaction.
+
+CSV content (first 5 rows):
+${csvText}
+
+Available categories: ${categoryList}
+
+For EACH row, determine:
+1. The date (convert to ISO format YYYY-MM-DD)
+2. The amount (positive number only)
+3. Whether it's INCOME or EXPENSE (based on column headers, amounts, or descriptions)
+4. A short description
+5. The best matching category id from the available list
+
+Respond ONLY with a JSON object:
+{
+  "columnMapping": {
+    "date": "column_name_or_null",
+    "amount": "column_name_or_null", 
+    "description": "column_name_or_null",
+    "type": "column_name_or_null"
+  },
+  "rows": [
+    {
+      "date": "YYYY-MM-DD",
+      "amount": "123.45",
+      "type": "EXPENSE",
+      "description": "short description",
+      "category": "category_id"
+    }
+  ]
+}`;
+
+    const result = await generateContentWithRetry("llama-3.3-70b-versatile", prompt);
+    const raw = (result || "").replace(/<think>[\s\S]*?<\/think>/gi, "");
+    const jsonStart = raw.indexOf("{");
+    const jsonEnd = raw.lastIndexOf("}");
+    if (jsonStart === -1 || jsonEnd === -1) {
+      console.error("No JSON found in AI response. Raw:", raw.substring(0, 500));
+      throw new Error("No JSON found in AI response");
+    }
+    const parsed = JSON.parse(raw.substring(jsonStart, jsonEnd + 1));
+
+    return { success: true as const, data: parsed };
+  } catch (error) {
+    console.error("Error analyzing CSV:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false as const, error: message };
+  }
+}
+
+export async function importTransactions(
+  transactions: FormDataTransaction[],
+  accountId: string
+) {
+  try {
+    const user = await getOrCreateUser();
+
+    const account = await prismaDb.account.findUnique({
+      where: { id: accountId, userId: user.id },
+    });
+
+    if (!account) throw new Error("Account not found");
+
+    let netBalanceChange = 0;
+
+    const data = transactions
+      .filter((t) => {
+        const amount = parseFloat(t.amount);
+        const date = t.date instanceof Date ? t.date : new Date(t.date);
+        return !isNaN(amount) && amount > 0 && !isNaN(date.getTime());
+      })
+      .map((t) => {
+        const amount = parseFloat(t.amount);
+        const date = t.date instanceof Date ? t.date : new Date(t.date);
+        const balanceChange = t.type === "EXPENSE" ? -amount : amount;
+        netBalanceChange += balanceChange;
+
+        return {
+          type: t.type,
+          amount,
+          date,
+          accountId,
+          category: t.category,
+          description: t.description ?? "",
+          isRecurring: false,
+          userId: user.id,
+        };
+      });
+
+    await prismaDb.$transaction(async (tx: Prisma.TransactionClient) => {
+      await tx.transaction.createMany({ data });
+      await tx.account.update({
+        where: { id: accountId },
+        data: { balance: { increment: netBalanceChange } },
+      });
+    });
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/account/${accountId}`);
+
+    return { success: true as const, imported: data.length };
+  } catch (error) {
+    console.error("Error importing transactions:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return { success: false as const, error: message };
   }
 }

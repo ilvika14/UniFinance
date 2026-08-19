@@ -35,10 +35,7 @@ function SignInForm() {
   };
 
   const handleGoogleSignIn = () => {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    const redirectUri = `${baseUrl}/api/auth/callback/google`;
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid email profile&access_type=offline`;
+    window.location.href = "/api/auth/google";
   };
 
   return (
@@ -88,13 +85,18 @@ function SignInForm() {
                 placeholder="you@example.com" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Password</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wider">Password</label>
+                <Link href="/forgot-password" className="text-xs text-primary hover:underline font-medium">
+                  Forgot password?
+                </Link>
+              </div>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required
                 className="w-full px-4 py-3 border border-border bg-card text-foreground text-sm rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                 placeholder="••••••••" />
             </div>
             <button type="submit" disabled={loading}
-              className="w-full py-3 gradient text-white font-semibold text-sm rounded-xl glow-emerald hover:opacity-90 transition-all flex items-center justify-center gap-2">
+              className="w-full py-3 gradient text-white font-semibold text-sm rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2">
               {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Signing in...</> : "Sign In"}
             </button>
           </form>

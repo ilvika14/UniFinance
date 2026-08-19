@@ -8,7 +8,9 @@ import { useEffect, useState } from "react";
 
 function useCounter(end: number, duration: number = 2000, delay: number = 0) {
   const [count, setCount] = useState(0);
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    setMounted(true);
     const timeout = setTimeout(() => {
       let start = 0;
       const increment = end / (duration / 16);
@@ -21,15 +23,15 @@ function useCounter(end: number, duration: number = 2000, delay: number = 0) {
     }, delay);
     return () => clearTimeout(timeout);
   }, [end, duration, delay]);
-  return count;
+  return { count, mounted };
 }
 
 function StatCounter({ value, prefix = "", suffix = "", label, color }: { value: number; prefix?: string; suffix?: string; label: string; color: string }) {
-  const count = useCounter(value, 2200, 800);
+  const { count, mounted } = useCounter(value, 2200, 800);
   return (
     <div className="bg-card/80 p-4 md:p-5 rounded-xl border border-border/50 hover:border-primary/20 transition-colors duration-300">
       <div className="text-[10px] md:text-xs text-muted-foreground mb-1.5 font-medium uppercase tracking-wider">{label}</div>
-      <div className={`text-xl md:text-3xl font-bold ${color} tabular-nums`}>{prefix}{count.toLocaleString()}{suffix}</div>
+      <div className={`text-xl md:text-3xl font-bold ${color} tabular-nums`}>{prefix}{mounted ? count.toLocaleString() : value.toLocaleString()}{suffix}</div>
     </div>
   );
 }
@@ -37,10 +39,10 @@ function StatCounter({ value, prefix = "", suffix = "", label, color }: { value:
 export default function Herosection() {
   const bars = [40, 60, 45, 80, 55, 90, 75, 100, 65, 85, 70, 95, 50, 85, 60];
   const activityItems = [
-    { name: "Apple Store", cat: "Electronics", amt: "-$999.00", date: "Today", icon: "A", income: false },
-    { name: "Whole Foods", cat: "Groceries", amt: "-$142.50", date: "Yesterday", icon: "W", income: false },
-    { name: "Salary", cat: "Income", amt: "+$5,200.00", date: "Mon", icon: "S", income: true },
-    { name: "Netflix", cat: "Entertainment", amt: "-$15.99", date: "Tue", icon: "N", income: false },
+    { name: "Apple Store", cat: "Electronics", amt: "-₹84,915.00", date: "Today", icon: "A", income: false },
+    { name: "Whole Foods", cat: "Groceries", amt: "-₹12,113.00", date: "Yesterday", icon: "W", income: false },
+    { name: "Salary", cat: "Income", amt: "+₹4,42,000.00", date: "Mon", icon: "S", income: true },
+    { name: "Netflix", cat: "Entertainment", amt: "-₹1,359.00", date: "Tue", icon: "N", income: false },
   ];
 
   return (
@@ -61,11 +63,9 @@ export default function Herosection() {
             transition={{ duration: 0.8, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
             className="text-[clamp(2.8rem,8.5vw,7.5rem)] font-bold leading-[0.92] tracking-tighter text-foreground mb-8"
           >
-            YOUR MONEY,
+            YOUR FINANCES,
             <br />
-            FINALLY
-            <br />
-            UNDERSTOOD.
+            SIMPLIFIED.
           </motion.h1>
 
           {/* Subheadline */}
@@ -86,7 +86,7 @@ export default function Herosection() {
             className="flex flex-col sm:flex-row gap-4 mb-16 w-full sm:w-auto"
           >
             <Link href="/dashboard" className="w-full sm:w-auto">
-              <Button className="w-full sm:w-auto px-10 py-7 text-sm font-semibold gradient text-white rounded-2xl glow-emerald flex items-center justify-center gap-2 group">
+              <Button className="w-full sm:w-auto px-10 py-7 text-sm font-semibold gradient text-white rounded-2xl flex items-center justify-center gap-2 group">
                 Get Started Free
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
@@ -104,22 +104,22 @@ export default function Herosection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="flex flex-wrap justify-center gap-6 md:gap-10 mb-20"
+            className="flex flex-wrap justify-center gap-5 md:gap-8 mb-20"
           >
             {[
-              { icon: <TrendingUp className="w-4 h-4" />, text: "Real-time Analytics", color: "text-primary" },
-              { icon: <Shield className="w-4 h-4" />, text: "Bank-level Security", color: "text-accent" },
-              { icon: <Zap className="w-4 h-4" />, text: "Smart Insights", color: "text-cyan-500 dark:text-cyan-400" },
+              { icon: <TrendingUp className="w-5 h-5" />, text: "Real-time Analytics", color: "text-primary" },
+              { icon: <Shield className="w-5 h-5" />, text: "Bank-level Security", color: "text-accent" },
+              { icon: <Zap className="w-5 h-5" />, text: "Smart Insights", color: "text-cyan-500 dark:text-cyan-400" },
             ].map((pill, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 + i * 0.1 }}
-                className={`flex items-center gap-2.5 text-sm font-medium ${pill.color}`}
+                className={`flex items-center gap-3 text-base font-semibold ${pill.color}`}
               >
-                <div className="w-8 h-8 rounded-xl bg-muted/80 flex items-center justify-center">{pill.icon}</div>
-                <span className="text-muted-foreground">{pill.text}</span>
+                <div className="w-11 h-11 rounded-xl bg-muted/80 flex items-center justify-center">{pill.icon}</div>
+                <span className="text-foreground">{pill.text}</span>
               </motion.div>
             ))}
           </motion.div>
@@ -132,19 +132,19 @@ export default function Herosection() {
             className="w-full relative h-[420px] sm:h-[520px] md:h-[640px] max-w-6xl mx-auto"
           >
             {/* Main dashboard panel */}
-            <div className="absolute left-1/2 top-0 -translate-x-1/2 w-[92%] md:w-[840px] h-[370px] md:h-[470px] glass-card rounded-3xl overflow-hidden flex flex-col z-10 animate-float-slow">
+            <div className="absolute left-1/2 top-0 -translate-x-1/2 w-[92%] md:w-[840px] h-[370px] md:h-[470px] glass-card rounded-3xl overflow-hidden flex flex-col z-10">
               {/* Title bar */}
               <div className="h-12 md:h-14 border-b border-border/50 flex items-center px-5 md:px-7 justify-between bg-card/30">
                 <div className="flex items-center gap-3">
                   <img
                     src="/logo_unif.png"
                     alt="UniFinance"
-                    className="w-10 h-10 object-contain rounded-xl shadow-lg shadow-primary/20"
+                    className="w-14 h-14 object-contain rounded-xl"
                     style={{ filter: "hue-rotate(70deg) saturate(1.2)" }}
                   />
                   <div className="font-semibold text-sm text-foreground">Dashboard</div>
                   <div className="hidden md:flex items-center gap-1.5 ml-3">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse-glow" />
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                     <span className="text-[10px] text-primary font-medium">Live</span>
                   </div>
                 </div>
@@ -162,12 +162,12 @@ export default function Herosection() {
               <div className="flex-1 p-5 md:p-8 bg-background/30">
                 {/* Stat counters */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 mb-6 md:mb-8">
-                  <StatCounter value={124500} prefix="$" suffix="" label="Total Balance" color="text-foreground" />
-                  <StatCounter value={4250} prefix="$" suffix="" label="Monthly Spending" color="text-foreground" />
+                  <StatCounter value={715743} prefix="₹" suffix="" label="Total Balance" color="text-foreground" />
+                  <StatCounter value={52000} prefix="₹" suffix="" label="Monthly Spending" color="text-foreground" />
                   <div className="hidden md:flex bg-card/80 p-5 rounded-xl border border-border/50 flex-col justify-between hover:border-primary/20 transition-colors">
                     <div className="text-xs text-muted-foreground mb-1.5 font-medium uppercase tracking-wider">Quick Actions</div>
                     <div className="flex gap-2 mt-3">
-                      <div className="flex-1 gradient text-white text-center py-2.5 rounded-xl text-xs font-semibold cursor-pointer hover:opacity-90 transition-opacity shadow-lg shadow-primary/20">Send</div>
+                      <div className="flex-1 gradient text-white text-center py-2.5 rounded-xl text-xs font-semibold cursor-pointer hover:opacity-90 transition-opacity">Send</div>
                       <div className="flex-1 bg-muted/80 text-foreground text-center py-2.5 rounded-xl text-xs font-semibold cursor-pointer hover:bg-muted transition-colors">Receive</div>
                     </div>
                   </div>
@@ -247,7 +247,7 @@ export default function Herosection() {
                 <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">AI Insight</span>
               </div>
               <p className="text-[13px] leading-relaxed mb-5 text-muted-foreground">
-                You&apos;ve spent <strong className="text-foreground">$320</strong> more on dining out this month. Consider cutting back to hit your savings goal!
+                You&apos;ve spent <strong className="text-foreground">₹27,200</strong> more on dining out this month. Consider cutting back to hit your savings goal!
               </p>
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
@@ -255,9 +255,11 @@ export default function Herosection() {
                 </div>
                 <span className="text-[10px] text-muted-foreground font-medium">72%</span>
               </div>
-              <button className="w-full py-2.5 gradient text-white rounded-xl text-xs font-bold hover:opacity-90 transition-opacity shadow-lg shadow-primary/20">
-                View Details
-              </button>
+              <Link href="/dashboard" className="block">
+                <button className="w-full py-2.5 gradient text-white rounded-xl text-xs font-bold hover:opacity-90 transition-opacity">
+                  View Details
+                </button>
+              </Link>
             </motion.div>
 
             {/* Decorative ring */}

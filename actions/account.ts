@@ -3,43 +3,7 @@ import { db as prismaDb } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { getOrCreateUser } from "@/lib/get-user";
-
-interface SerializedAccount {
-  id: string;
-  name: string;
-  type: string;
-  balance: number;
-  isDefault: boolean;
-  userId: string;
-  createdAt: Date;
-  updatedAt: Date;
-  _count?: { transactions: number };
-}
-
-interface SerializedTransaction {
-  id: string;
-  type: "INCOME" | "EXPENSE";
-  amount: number;
-  description: string | null;
-  date: Date | string;
-  category: string;
-  accountId: string;
-  userId: string;
-  isRecurring: boolean;
-  recurringInterval: string | null;
-  nextRecurringDate: Date | null;
-  status: "PENDING" | "COMPLETED" | "FAILED";
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-function serializeAccount(obj: Record<string, unknown>): SerializedAccount {
-  const serialized = { ...obj } as unknown as SerializedAccount;
-  if (obj.balance && typeof obj.balance === "object" && obj.balance !== null && "toNumber" in obj.balance) {
-    serialized.balance = (obj.balance as { toNumber: () => number }).toNumber();
-  }
-  return serialized;
-}
+import { serializeAmount } from "@/lib/utils";
 
 export async function updateDefaultAccount(accountId: string) {
   try {
@@ -65,7 +29,7 @@ export async function updateDefaultAccount(accountId: string) {
     });
 
     revalidatePath("/dashboard");
-    const serializedAccount = serializeAccount(account);
+    const serializedAccount = serializeAmount(account);
     return { success: true, data: serializedAccount };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
@@ -99,12 +63,8 @@ export async function getAccountWithTransaction(accountId: string) {
     return null;
   }
 
-  const serialized = serializeAccount(account);
-  const serializedTransactions: SerializedTransaction[] = account.transactions.map((t) => {
-    const s = { ...t } as unknown as SerializedTransaction;
-    s.amount = typeof s.amount === "number" ? s.amount : Number(s.amount);
-    return s;
-  });
+  const serialized = serializeAmount(account);
+  const serializedTransactions = account.transactions.map((t) => serializeAmount(t));
 
   return {
     ...serialized,

@@ -18,10 +18,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import CreateAccountDrawer from "@/components/ui/create-account-drawer";
 import { cn } from "@/lib/utils";
-import { ReceiptScanner } from "./recieptscanner";
+import { ReceiptScanner } from "./receiptscanner";
+import { CsvImporter } from "./csv-importer";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { Upload } from "lucide-react";
+import { formatCurrency } from "@/lib/currencies";
 
 type ScannedData = { amount?: number | string; date?: string | Date; description?: string; category?: string; merchantName?: string; };
-type Account = { id: string; name: string; balance: number | string; isDefault?: boolean; };
+type Account = { id: string; name: string; balance: number | string; currency?: string; isDefault?: boolean; };
 type Category = { id: string; name: string; type: "INCOME" | "EXPENSE"; };
 
 interface Props {
@@ -83,7 +87,27 @@ export default function AddTransactionForm({ accounts = [], category = [], editM
         <p className="mt-1 text-sm text-muted-foreground">Record income or expenses</p>
       </div>
 
-      {!editMode && <ReceiptScanner onScanComplete={handleScanComplete} />}
+      {!editMode && (
+        <div className="px-4 flex gap-4 bg-background pb-4 pt-2">
+          <ReceiptScanner onScanComplete={handleScanComplete} />
+          <Drawer>
+            <DrawerTrigger asChild>
+              <Button type="button" variant="outline" className="flex-1 h-12 border-border rounded-xl">
+                <Upload className="h-4 w-4 mr-2" />
+                Import CSV
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent className="bg-card max-h-[85vh]">
+              <DrawerHeader>
+                <DrawerTitle>Import Transactions from CSV</DrawerTitle>
+              </DrawerHeader>
+              <div className="px-6 pb-6 overflow-y-auto max-h-[70vh]">
+                <CsvImporter accounts={accounts} categories={category} />
+              </div>
+            </DrawerContent>
+          </Drawer>
+        </div>
+      )}
 
       <div className="space-y-6 px-6 py-6">
         <Field label="Transaction type" error={errors.type?.message}>
@@ -104,7 +128,7 @@ export default function AddTransactionForm({ accounts = [], category = [], editM
             <Select value={accountId} onValueChange={(v) => setValue("accountId", v)}>
               <SelectTrigger className="h-11 bg-muted border-border rounded-xl"><SelectValue /></SelectTrigger>
               <SelectContent className="bg-card border-border rounded-xl">
-                {accounts.map((a) => (<SelectItem key={a.id} value={a.id} className="rounded-lg">{a.name} - ${Number(a.balance).toFixed(2)}</SelectItem>))}
+                {accounts.map((a) => (<SelectItem key={a.id} value={a.id} className="rounded-lg">{a.name} - {formatCurrency(Number(a.balance), a.currency)}</SelectItem>))}
                 <CreateAccountDrawer>
                   <Button variant="ghost" className="w-full justify-start text-foreground hover:bg-muted rounded-lg">+ Create account</Button>
                 </CreateAccountDrawer>
@@ -164,7 +188,7 @@ export default function AddTransactionForm({ accounts = [], category = [], editM
 
       <div className="flex gap-3 border-t border-border bg-muted/30 px-6 py-5">
         <Button type="button" variant="outline" className="h-11 w-1/2 border-border rounded-xl" onClick={() => router.back()}>Cancel</Button>
-        <Button type="submit" disabled={transactionLoading} className="h-11 w-1/2 gradient text-white rounded-xl glow-emerald">
+        <Button type="submit" disabled={transactionLoading} className="h-11 w-1/2 gradient text-white rounded-xl">
           {transactionLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</> : <><Check className="mr-2 h-4 w-4" />{editMode ? "Update" : "Create"}</>}
         </Button>
       </div>

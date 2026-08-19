@@ -13,19 +13,27 @@ import { SelectTrigger } from "@radix-ui/react-select";
 import useFetch from "@/hooks/usefetch";
 import { createAccount } from "@/actions/dashboard";
 import { toast } from "sonner";
+import { SUPPORTED_CURRENCIES } from "@/lib/currencies";
 
 export default function CreateAccountDrawer({ children }: Readonly<{ children: React.ReactNode }>) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm({
     resolver: zodResolver(accountSchema),
-    defaultValues: { name: "", type: "CURRENT", balance: "", isDefault: false },
+    defaultValues: { name: "", type: "CURRENT", balance: "", currency: "INR", isDefault: false },
   });
+
+  useEffect(() => { setMounted(true); }, []);
 
   const { data: newAccount, error, loading: createAccountLoading, fn: createAccountFn } = useFetch(createAccount);
   useEffect(() => { if (newAccount) { toast.success("Account created successfully"); reset(); setOpen(false); } }, [newAccount, reset]);
   useEffect(() => { if (error) toast.error(error || "Failed to create account"); }, [error]);
 
-  const onSubmit = async (data: { name: string; type: string; balance: string; isDefault: boolean }) => { await createAccountFn(data); };
+  const onSubmit = async (data: { name: string; type: string; balance: string; currency: string; isDefault: boolean }) => { await createAccountFn(data); };
+
+  const accountType = watch("type");
+  const isDefault = watch("isDefault");
+  const currency = watch("currency");
 
   return (
     <div>
@@ -57,7 +65,7 @@ export default function CreateAccountDrawer({ children }: Readonly<{ children: R
 
               <div className="space-y-2">
                 <label htmlFor="type" className="text-sm font-medium text-foreground">Account Type</label>
-                <Select onValueChange={(value) => setValue("type", value as "CURRENT" | "SAVINGS")} defaultValue={watch("type")}>
+                <Select onValueChange={(value) => setValue("type", value as "CURRENT" | "SAVINGS")} value={mounted ? accountType : "CURRENT"}>
                   <SelectTrigger id="type" className="h-10 px-2 rounded-xl border border-border bg-muted hover:bg-muted/80 transition-colors focus:border-primary focus:ring-0">
                     <SelectValue placeholder="Select account type" />
                   </SelectTrigger>
@@ -82,6 +90,27 @@ export default function CreateAccountDrawer({ children }: Readonly<{ children: R
                 {errors.balance && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.balance.message}</p>}
               </div>
 
+              <div className="space-y-2">
+                <label htmlFor="currency" className="text-sm font-medium text-foreground">Currency</label>
+                <Select onValueChange={(value) => setValue("currency", value)} value={mounted ? currency : "INR"}>
+                  <SelectTrigger id="currency" className="h-10 px-2 rounded-xl border border-border bg-muted hover:bg-muted/80 transition-colors focus:border-primary focus:ring-0">
+                    <SelectValue placeholder="Select currency" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border rounded-xl max-h-[200px] overflow-y-auto">
+                    {SUPPORTED_CURRENCIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code} className="cursor-pointer rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{c.symbol}</span>
+                          <span>{c.code}</span>
+                          <span className="text-muted-foreground text-xs">- {c.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.currency && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors.currency.message}</p>}
+              </div>
+
               <div className="rounded-xl border border-border bg-muted/50 p-3">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -90,7 +119,7 @@ export default function CreateAccountDrawer({ children }: Readonly<{ children: R
                     </label>
                     <p className="text-xs text-muted-foreground ml-6">Automatically selected for new transactions</p>
                   </div>
-                  <Switch id="isDefault" checked={watch("isDefault")} onCheckedChange={(checked) => setValue("isDefault", checked)} />
+                  <Switch id="isDefault" checked={mounted ? isDefault : false} onCheckedChange={(checked) => setValue("isDefault", checked)} />
                 </div>
               </div>
 
@@ -98,7 +127,7 @@ export default function CreateAccountDrawer({ children }: Readonly<{ children: R
                 <DrawerClose asChild>
                   <Button variant="outline" type="button" className="flex-1 h-10 rounded-xl border-border">Cancel</Button>
                 </DrawerClose>
-                <Button type="submit" className="flex-1 h-10 gradient text-white rounded-xl glow-emerald" disabled={createAccountLoading}>
+                <Button type="submit" className="flex-1 h-10 gradient text-white rounded-xl" disabled={createAccountLoading}>
                   {createAccountLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : <><CheckCircle className="mr-2 h-4 w-4" />Create</>}
                 </Button>
               </div>

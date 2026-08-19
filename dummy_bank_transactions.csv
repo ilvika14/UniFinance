@@ -1,0 +1,36 @@
+Date,Description,Amount,Type,Category
+2025-07-01,Salary - Acme Corp,85000.00,INCOME,salary
+2025-07-01,Rent Payment,22000.00,EXPENSE,housing
+2025-07-02,Grocery Store - BigBasket,3450.00,EXPENSE,groceries
+2025-07-03,Electricity Bill - BSES,2180.00,EXPENSE,utilities
+2025-07-04,Amazon India Shopping,4999.00,EXPENSE,shopping
+2025-07-05,Uber Ride,850.00,EXPENSE,transportation
+2025-07-05,Netflix Subscription,649.00,EXPENSE,entertainment
+2025-07-06,Freelance Payment - Fiverr,15000.00,INCOME,side-income
+2025-07-07,Swiggy Order,1250.00,EXPENSE,food
+2025-07-08,Gym Membership,2500.00,EXPENSE,health
+2025-07-09,Phone Recharge - Jio,599.00,EXPENSE,bills
+2025-07-10,Investment - SIP,10000.00,EXPENSE,investment
+2025-07-10,Dividend Income,1250.00,INCOME,investment
+2025-07-11,Restaurant - Barbeque Nation,2800.00,EXPENSE,food
+2025-07-12,Petrol Pump - HP,3200.00,EXPENSE,transportation
+2025-07-13,Medical - Apollo Pharmacy,890.00,EXPENSE,healthcare
+2025-07-14,Internet Bill - Airtel,999.00,EXPENSE,bills
+2025-07-15,Salary - Acme Corp,85000.00,INCOME,salary
+2025-07-15,Maintenance - Society,3500.00,EXPENSE,housing
+2025-07-16,Book Purchase - Amazon,650.00,EXPENSE,education
+2025-07-17,YouTube Premium,129.00,EXPENSE,entertainment
+2025-07-18,Bus Pass - Monthly,800.00,EXPENSE,transportation
+2025-07-19,Clothing - Myntra,3499.00,EXPENSE,shopping
+2025-07-20,Freelance Payment - Upwork,22000.00,INCOME,side-income
+2025-07-21,Grocery Store - DMart,2870.00,EXPENSE,groceries
+2025-07-22,Water Bill,450.00,EXPENSE,utilities
+2025-07-23,Movie Tickets - PVR,800.00,EXPENSE,entertainment
+2025-07-24,Stationery - Office,320.00,EXPENSE,education
+2025-07-25,Insurance Premium - LIC,5200.00,EXPENSE,insurance
+2025-07-26,Spotify Subscription,199.00,EXPENSE,entertainment
+2025-07-27,Dentist Visit,1500.00,EXPENSE,healthcare
+2025-07-28,Car Wash,600.00,EXPENSE,transportation
+2025-07-29,Grocery Store - Reliance,1950.00,EXPENSE,groceries
+2025-07-30,Transfer to Savings,15000.00,EXPENSE,savings
+2025-07-30,Interest Earned,320.00,INCOME,savings

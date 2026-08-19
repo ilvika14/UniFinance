@@ -32,10 +32,7 @@ export default function SignUpPage() {
   };
 
   const handleGoogleSignIn = () => {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    const redirectUri = `${baseUrl}/api/auth/callback/google`;
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid email profile&access_type=offline`;
+    window.location.href = "/api/auth/google";
   };
 
   return (
@@ -98,7 +95,7 @@ export default function SignUpPage() {
               <p className="mt-1 text-xs text-muted-foreground">Must be at least 6 characters</p>
             </div>
             <button type="submit" disabled={loading}
-              className="w-full py-3 gradient text-white font-semibold text-sm rounded-xl glow-emerald hover:opacity-90 transition-all flex items-center justify-center gap-2">
+              className="w-full py-3 gradient text-white font-semibold text-sm rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-2">
               {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Creating account...</> : "Create Account"}
             </button>
           </form>

@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import AddTransactionForm from '../_components/transaction-form'
 import { GetUserAccounts } from '@/actions/dashboard';
 import { defaultCategories } from '@/data/category';
 import { getTransaction } from '@/actions/transaction';
+import { BarLoader } from 'react-spinners';
 
 
 export default async function AddTransactionPage({
@@ -36,13 +37,14 @@ export default async function AddTransactionPage({
 
   return (
     <div className="max-w-3xl mx-auto mt-5 px-5">
-
+      <Suspense fallback={<div className="flex justify-center py-10"><BarLoader width={200} color="#34d399" /></div>}>
       <AddTransactionForm
         accounts={accounts}
         category={defaultCategories as Array<{ id: string; name: string; type: "INCOME" | "EXPENSE" }>}
         editMode={Boolean(editId)}
         initialData={initialData}
       />
+      </Suspense>
     </div>
   );
 }
